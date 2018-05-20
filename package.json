@@ -1,0 +1,22 @@
+{
+  "name": "quickauth",
+  "version": "1.0.0",
+  "description": "QuickAuth",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joshuaquek/QuickAuth.git"
+  },
+  "author": "",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/joshuaquek/QuickAuth/issues"
+  },
+  "homepage": "https://github.com/joshuaquek/QuickAuth#readme",
+  "dependencies": {
+    "keypair": "^1.0.1"
+  }
+}
