@@ -4,7 +4,10 @@
   "description": "QuickAuth",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node index.js"
+  },
+  "engines": {
+    "node": ">=8.9.0"
   },
   "repository": {
     "type": "git",
