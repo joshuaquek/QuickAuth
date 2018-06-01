@@ -4,9 +4,19 @@
 
 Quick and secure asymmetric authentication, built using Node's native crypto library.
 
+## Intent
+
+Nowadays, regular username-password authentication examples would mean that the username and password is sent over to the server in plaintext. Usually, if this is to be done, one would have to do it over a HTTPS connection (requires an SSL cert), which might be troublesome to set up.
+
+How can one send encrypted http requests from the client that can only be decrypted by the server?
+
+Introducing QuickAuth!
+
+QuickAuth uses 2048-bit (for payload) and 1024-bit (for webtoken) RSA asymmetric public-private keypairs, which then allows for secure one way encryption and decryption.
+
 ## Installation
 
-  `npm install @jdaudier/number-formatter`
+  `npm install quickauth`
 
 ## Usage
 
@@ -22,16 +32,21 @@ const QuickAuth = require('quickauth')
 const bodyParser = require('body-parser')
 const express = require('express')
 const cors = require('cors')
-const disallowCrossOrigin = cors({
-  origin: "http://www.yourwebsitename.com", // This ensures that all requests can only come from this URL
+const disallowCrossOriginMiddleware = cors({
+  origin: "http://www.yourwebsitename.com", // Ensures that other concurrent websites running on your browser cannot access your server's resources
   optionsSuccessStatus: 200
 })
+const middlewares = [
+  disallowCrossOriginMiddleware,
+  QuickAuth.AuthenticateMiddleware
+]
 
 
 
 // QUICKAUTH: CONFIGURES QUICKAUTH TO USE MONGO DB AS STORAGE 
 QuickAuth.configure({
   storage: 'mongodb',  // QUICKAUTH: SPECIFIES THE TYPE OF STORAGE FOR QUICKAUTH TO USE (For now its only 'mongodb' or 'lokijs')
+  keySize: 2048 // QUICKAUTH: THE SIZE OF THE PUBLIC-PRIVATE KEY. 1024-BIT KEYS GENERATE IN 0.2s TO 2s WHILE 2048-BIT KEYS GENERATE IN 5.0s 10.0s 
   details: {
     databaseConnectionString: 'mongod://localhost:27017/mongoDbNameHere', // QUICKAUTH: YOUR MONGO DB CONNECTION STRING HERE
     storageTable: 'auth_keypair_collection' // QUICKAUTH: YOUR MONGO DB TABLE THAT QUICKAUTH WILL USE TO STORE PRIVATE-PUBLIC KEYPAIRS
@@ -50,13 +65,13 @@ app.use( bodyParser.urlencoded( { extended: true } ) )
 // ---- API Endpoints ----
 
 // ____ 1. Front-end to first fetch public key to be used for logging in ____
-app.get('/initAuth', disallowCrossOrigin, (req, res, next) => {
+app.get('/initAuth', disallowCrossOriginMiddleware, (req, res) => {
   let publicKey = QuickAuth.generate() // QUICKAUTH: GENERATES A RSA PUBLIC-PRIVATE KEYPAIR. RSA KEYPAIR GETS STORED IN DB WHILE PUBLIC KEY GETS RETURNED
   res.json({ public_key: publicKey }) 
 })
 
 // ____ 2. Login using the following request in json: { "public_key": "Example Public Key From FrontEnd", "payload": "Example Encrypted Payload" } ____
-app.post('/login', disallowCrossOrigin, (req, res, next) => {
+app.post('/login', disallowCrossOriginMiddleware, (req, res) => {
   // Get public key from http response
   let publicKey = (req.body || { public_key: "" }).public_key 
 
@@ -83,7 +98,7 @@ app.post('/login', disallowCrossOrigin, (req, res, next) => {
   if( /* Username/Password is correct */ ){
 
     // QUICKAUTH: GENERATE WEB TOKEN 
-    let accessToken = QuickAuth.webtoken(publicKey, { identity: "Username or Identifier Here", timeoutInSeconds: 2592000 })
+    let accessToken = QuickAuth.webtoken({ identity: "Username or Identifier Here", timeoutInSeconds: 2592000 })
     // Send success response with Web Token if username and password is correct
     res.json({status: 'success', access_token: accessToken})
 
@@ -96,6 +111,10 @@ app.post('/login', disallowCrossOrigin, (req, res, next) => {
   
 })
 
+// ____ 3. Example Endpoint "getTacoOrders" that uses Webtoken ____
+app.post('/getTacoOrders', middlewares, (req, res) => {
+  
+})
 
 
 
@@ -109,7 +128,7 @@ app.listen(3000);
   `npm test`
 
 ## Special Thanks 
-
+NOTE: USE BCRYPT for password checking
 https://www.nodejsera.com/nodejs-tutorial-day10-crypto-module-symmetric-asymmetric-encryption-decryption.html
 https://github.com/juliangruber/keypair
 
