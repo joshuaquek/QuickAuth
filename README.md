@@ -1,7 +1,5 @@
 # QuickAuth
 
-=========
-
 Quick and secure asymmetric authentication, built using Node's native crypto library.
 
 ## Intent
